@@ -1,0 +1,3 @@
+/home/bearkiller/dev/CLE/General Problems/CMakeFiles/ex1.dir
+/home/bearkiller/dev/CLE/General Problems/CMakeFiles/edit_cache.dir
+/home/bearkiller/dev/CLE/General Problems/CMakeFiles/rebuild_cache.dir

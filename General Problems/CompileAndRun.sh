@@ -1,0 +1,1 @@
+cmake .. && make && ./ex1 texts/text0.txt texts/text1.txt texts/text2.txt
