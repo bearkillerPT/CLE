@@ -1,5 +1,16 @@
 #include <stdio.h>
 
+int is_vowel(char char_in)
+{
+    if (char_in >= 65 && char_in <= 90 || char_in >= 97 && char_in <= 122) //this line check if you have entered a char_in based on the ascii chart
+        if (char_in == 'a' || char_in == 'A' || char_in == 'e' || char_in == 'E' || char_in == 'i' || char_in == 'I' || char_in == 'o' || char_in == 'O' || char_in == 'u' || char_in == 'U')
+            return 0; //Vowel
+        else
+            return 1; //Consonant
+    else
+        return -1; //Invalid_char
+}
+
 int main(int argc, char *argv[])
 {
     if (argc == 1)
@@ -24,24 +35,14 @@ int main(int argc, char *argv[])
         {
             if (last_char == ' ')
             {
-                if (current_char >= 65 && current_char <= 90 || current_char >= 97 && current_char <= 122) //this line check if you have entered a current_char based on the ascii chart
-                {
-                    if (current_char == 'a' || current_char == 'A' || current_char == 'e' || current_char == 'E' || current_char == 'i' || current_char == 'I' || current_char == 'o' || current_char == 'O' || current_char == 'u' || current_char == 'U')
-                    {
-                        vowel_prefixed_words_count += 1;
-                    }
-                }
+                if (is_vowel(current_char) == 0) 
+                    vowel_prefixed_words_count += 1;
             }
             else if (current_char == ' ')
             {
                 words_count += 1;
-                if (last_char >= 65 && last_char <= 90 || last_char >= 97 && last_char <= 122) //this line check if you have entered a last_char based on the ascii chart
-                {
-                    if (!(last_char == 'a' || last_char == 'A' || last_char == 'e' || last_char == 'E' || last_char == 'i' || last_char == 'I' || last_char == 'o' || last_char == 'O' || last_char == 'u' || last_char == 'U'))
-                    {
-                        consonant_sufixed_words_count += 1;
-                    }
-                }
+                if (is_vowel(last_char) == 1)
+                    consonant_sufixed_words_count += 1;
             }
             last_char = current_char;
         }
