@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/Project.dir/ex1.c.o CMakeFiles/Project.dir/ex2.c.o -o Project 
