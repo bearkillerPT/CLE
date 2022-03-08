@@ -11,7 +11,7 @@ int read_squared_matrix(int size, int **a, FILE *matrix_file)
     {
         if (c >= 48 && c <= 57)
         {
-            a[current_i / size][current_i % size] = (int)c;
+            a[current_i / size][current_i % size] = (int)c - 48;
             current_i++;
         }
     }
@@ -21,21 +21,20 @@ int read_squared_matrix(int size, int **a, FILE *matrix_file)
 void print_squared_matrix(int size, int **matrix)
 {
     char number_buffer[20];
-    char res[1000] = "";
-    strcpy(res, "[");
+    char res[10000];
+    strcpy(res, "[[");
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
         {
             sprintf(number_buffer, "%d", matrix[i][j]);
-            printf("%d", matrix[i][j]);
             strcat(res, number_buffer);
 
             if (j != size - 1)
                 strcat(res, ",");
         }
         if (i != size - 1)
-            strcat(res, "],[");
+            strcat(res, "],\n[");
         else
             strcat(res, "]");
     }
@@ -80,16 +79,24 @@ int main(int argc, char *argv[])
             }
             int **matrix = calloc(matrix_length, sizeof(int *));
             for (int i = 0; i < matrix_length; i++)
-            {
                 matrix[i] = calloc(matrix_length, sizeof(int));
-                memset(matrix[i], 0, sizeof matrix[i]);
-            }
+
             printf("%s -> %d x %d matrix \n", argv[matrix_i], matrix_length, matrix_length);
             fseek(matrix_file, 0, SEEK_SET);
             read_squared_matrix(matrix_length, matrix, matrix_file);
             print_squared_matrix(matrix_length, matrix);
+            printf("\n");
+            
+            fclose(matrix_file);
+
+            for (int i = 0; i < matrix_length; i++)
+                free(matrix[i]);
+            free(matrix);
+
         }
-        fclose(matrix_file);
+        else 
+            printf("The provided file: %s\n couldn't be opened!", argv[matrix_i]);
     }
+
     return 0;
 }
