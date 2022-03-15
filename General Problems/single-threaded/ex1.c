@@ -1,23 +1,118 @@
-#include <stdio.h>
 #include <wchar.h>
+#include <stdio.h>
 #include <locale.h>
 #include <time.h>
 
-int is_vowel(wint_t char_in)
+int isVowel(wchar_t char_in)
 {
-    int special_vowels[30] = {0xC3A1, 0xC381, 0xC3A0, 0xC380, 0xC3A2, 0xC382, 0xC3A3, 0xC383, 0xC3A9, 0xC389, 0xC3A8, 0xC388, 0xC3AA, 0xC38A, 0xC3AD, 0xC38D, 0xC3AC, 0xC38C, 0xC3B3, 0xC393, 0xC3B2, 0xC392, 0xC3B4, 0xC394, 0xC3B5, 0xC395, 0xC3BA, 0xC39A, 0xC3B9, 0xC399};
-    if (char_in >= 65 && char_in <= 90 || char_in >= 97 && char_in <= 122) //this line check if you have entered a char_in based on the ascii chart
+    wchar_t special_vowels[30] = {0xC3A1, 0xC381, 0xC3A0, 0xC380, 0xC3A2, 0xC382, 0xC3A3, 0xC383, 0xC3A9, 0xC389, 0xC3A8, 0xC388, 0xC3AA, 0xC38A, 0xC3AD, 0xC38D, 0xC3AC, 0xC38C, 0xC3B3, 0xC393, 0xC3B2, 0xC392, 0xC3B4, 0xC394, 0xC3B5, 0xC395, 0xC3BA, 0xC39A, 0xC3B9, 0xC399};
+    if (char_in >= 65 && char_in <= 90 || char_in >= 97 && char_in <= 122)
+    { //this line check if you have entered a char_in based on the ascii chart
         if (char_in == 'a' || char_in == 'A' || char_in == 'e' || char_in == 'E' || char_in == 'i' || char_in == 'I' || char_in == 'o' || char_in == 'O' || char_in == 'u' || char_in == 'U')
-            return 0; //Vowel
-        else {
-            for(int special_vowel_i = 0; special_vowel_i < sizeof(special_vowels); special_vowel_i++) {
-                if(char_in == special_vowels[special_vowel_i])
-                    return 0;
-            }
-            return 1; //Consonant
-        }
+            return 1; //Vowel
+    }
     else
-        return -1; //Invalid_char
+    {
+        for (int special_vowel_i = 0; special_vowel_i < sizeof(special_vowels); special_vowel_i++)
+        {
+            if ((int)char_in == special_vowels[special_vowel_i])
+                return 1;
+        }
+        return 0; //Not a vowel
+    }
+    return 0; //Not a vowel
+}
+
+int isConsonant(wchar_t char_in)
+{
+    wchar_t tilled_c = 0xC387;
+    if (!isVowel(char_in))
+    {
+        if (char_in >= 65 && char_in <= 90 || char_in >= 97 && char_in <= 122)
+            return 1;
+    }
+    if (char_in == tilled_c)
+        return 0;
+    return 0;
+}
+
+int isMergeSymbol(wchar_t char_in)
+{
+
+    if (char_in == 0x27 || char_in == 0xE28098 || char_in == 0xE28099)
+        return 1;
+    return 0;
+}
+
+int isPonctuationSymbol(wchar_t char_in)
+{
+    if ((wchar_t)char_in == '.' || (wchar_t)char_in == ',' || (wchar_t)char_in == ':' || (wchar_t)char_in == ';' || (wchar_t)char_in == '?' || (wchar_t)char_in == '!' || char_in == 0xE28098 || char_in == 0xE280A6)
+        return 1;
+    return 0;
+}
+
+int isSeparationSymbol(wchar_t char_in)
+{
+    if (char_in == 0x22 || char_in == 0xE2809C || char_in == 0xe2809D || (wchar_t)char_in == '-' || (wchar_t)char_in == '[' || (wchar_t)char_in == ']' || (wchar_t)char_in == '(' || (wchar_t)char_in == ')')
+        return 1;
+    return 0;
+}
+
+int isWhiteSpace(wchar_t char_in)
+{
+    if (char_in == 0x20 || char_in == 0x9 || char_in == 0xA || char_in == 0xD)
+        return 1;
+    return 0;
+}
+
+int isIrrelevantChar(wchar_t char_in)
+{
+    return isWhiteSpace(char_in) ||
+           isSeparationSymbol(char_in) ||
+           isPonctuationSymbol(char_in);
+}
+
+//Get a utf8 char!
+int fgetutf8c(FILE *f)
+{
+    int result = 0;
+    int input[6] = {};
+
+    input[0] = fgetc(f);
+    if (input[0] == EOF)
+    {
+        // The EOF was hit by the first character.
+        result = EOF;
+    }
+    else if (input[0] < 0x80)
+    {
+        // the first character is the only 7 bit sequence...
+        result = input[0];
+    }
+    else if ((input[0] & 0xE0) == 0xC0)
+    {
+        // This is a 2 byte utf8-char!
+        input[1] = fgetc(f);
+        result = ((input[0]) << 8) + input[1];
+    }
+    else if ((input[0] & 0xF0) == 0xE0)
+    {
+        // This is a 3 byte utf8-char!
+        input[1] = fgetc(f);
+        input[2] = fgetc(f);
+        result = (input[0] << 16) + (input[1] << 8) + input[2];
+    }
+    else if ((input[0] & 0xF8) == 0xF0)
+    {
+        // This is a 4 byte utf8-char!
+        input[1] = fgetc(f);
+        input[2] = fgetc(f);
+        input[3] = fgetc(f);
+        result = (input[0] << 24) + (input[1] << 16) + (input[2] << 8) + input[3];
+    }
+    else
+        return EOF;
+    return result;
 }
 
 int main(int argc, char *argv[])
@@ -39,22 +134,22 @@ int main(int argc, char *argv[])
             return 1;
         }
         t = clock();
-        wint_t last_char;
-        wint_t current_char;
+        wchar_t last_char = ' ';
+        wchar_t current_char;
         int vowel_prefixed_words_count = 0;
         int consonant_sufixed_words_count = 0;
         int words_count = 0;
-        while ((current_char = fgetwc(text_file)) != WEOF)
+        while ((current_char = fgetutf8c(text_file)) != WEOF)
         {
-            if (last_char == ' ')
+            if (isIrrelevantChar(last_char))
             {
-                if (is_vowel(current_char) == 0) 
+                if (isVowel(current_char))
                     vowel_prefixed_words_count += 1;
             }
-            else if (current_char == ' ')
+            else if (isIrrelevantChar(current_char))
             {
                 words_count += 1;
-                if (is_vowel(last_char) == 1)
+                if (isConsonant(last_char))
                     consonant_sufixed_words_count += 1;
             }
             last_char = current_char;
@@ -64,8 +159,8 @@ int main(int argc, char *argv[])
         printf("#VOWEL_PREFIXED --> %d\n", vowel_prefixed_words_count);
         printf("#CONSONANT_SUFIXED --> %d\n", consonant_sufixed_words_count);
         t = clock() - t;
-            double time_taken = ((double)t) / CLOCKS_PER_SEC;
-            printf("The program took %f seconds to execute\n\n", time_taken);
+        double time_taken = ((double)t) / CLOCKS_PER_SEC;
+        printf("The program took %f seconds to execute\n\n", time_taken);
         fclose(text_file);
     }
     return 0;
