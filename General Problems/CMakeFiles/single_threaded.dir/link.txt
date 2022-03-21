@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/single_threaded.dir/ex1.c.o CMakeFiles/single_threaded.dir/ex2.c.o -o single_threaded 

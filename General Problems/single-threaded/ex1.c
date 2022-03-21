@@ -13,7 +13,7 @@ int isVowel(wchar_t char_in)
     }
     else
     {
-        for (int special_vowel_i = 0; special_vowel_i < sizeof(special_vowels); special_vowel_i++)
+        for (int special_vowel_i = 0; special_vowel_i < 30; special_vowel_i++)
         {
             if ((int)char_in == special_vowels[special_vowel_i])
                 return 1;
@@ -25,14 +25,11 @@ int isVowel(wchar_t char_in)
 
 int isConsonant(wchar_t char_in)
 {
-    wchar_t tilled_c = 0xC387;
+    if (char_in == 0xC387 || char_in == 0xC3A7) // ç || Ç
+        return 1;
     if (!isVowel(char_in))
-    {
         if (char_in >= 65 && char_in <= 90 || char_in >= 97 && char_in <= 122)
             return 1;
-    }
-    if (char_in == tilled_c)
-        return 0;
     return 0;
 }
 
@@ -53,7 +50,7 @@ int isPonctuationSymbol(wchar_t char_in)
 
 int isSeparationSymbol(wchar_t char_in)
 {
-    if (char_in == 0x22 || char_in == 0xE2809C || char_in == 0xe2809D || (wchar_t)char_in == '-' || (wchar_t)char_in == '[' || (wchar_t)char_in == ']' || (wchar_t)char_in == '(' || (wchar_t)char_in == ')')
+    if (char_in == 0x22 || char_in == 0xE2809C || char_in == 0xe2809D || (wchar_t)char_in == '-' || char_in == 0xE28093 || (wchar_t)char_in == '[' || (wchar_t)char_in == ']' || (wchar_t)char_in == '(' || (wchar_t)char_in == ')')
         return 1;
     return 0;
 }
@@ -84,25 +81,25 @@ int fgetutf8c(FILE *f)
         // The EOF was hit by the first character.
         result = EOF;
     }
-    else if (input[0] < 0x80)
+    else if (input[0] < 0x80) //0xxxxxxx
     {
         // the first character is the only 7 bit sequence...
         result = input[0];
     }
-    else if ((input[0] & 0xE0) == 0xC0)
+    else if ((input[0] & 0xE0) == 0xC0) //10xxxxxx 10xxxxxx
     {
         // This is a 2 byte utf8-char!
         input[1] = fgetc(f);
         result = ((input[0]) << 8) + input[1];
     }
-    else if ((input[0] & 0xF0) == 0xE0)
+    else if ((input[0] & 0xF0) == 0xE0) //110xxxxx 10xxxxxx 10xxxxxx
     {
         // This is a 3 byte utf8-char!
         input[1] = fgetc(f);
         input[2] = fgetc(f);
         result = (input[0] << 16) + (input[1] << 8) + input[2];
     }
-    else if ((input[0] & 0xF8) == 0xF0)
+    else if ((input[0] & 0xF8) == 0xF0) //1110xxxx 10xxxxxx 10xxxxxx 10xxxxxx
     {
         // This is a 4 byte utf8-char!
         input[1] = fgetc(f);
@@ -139,21 +136,38 @@ int main(int argc, char *argv[])
         int vowel_prefixed_words_count = 0;
         int consonant_sufixed_words_count = 0;
         int words_count = 0;
+        int merge_symbols_count = 0;
+        int last_words_count = 0;
         while ((current_char = fgetutf8c(text_file)) != WEOF)
         {
+            if (isMergeSymbol(current_char))
+            {
+                merge_symbols_count++;
+                if (merge_symbols_count % 2 == 0 && words_count == last_words_count+2) {
+                    words_count -= 1;
+                    printf("last_words_count: %d\n\n", last_words_count);
+                    printf("words_count: %d\n", words_count);
+                }
+                else
+                    last_words_count = words_count;
+            }
             if (isIrrelevantChar(last_char))
             {
+                if (isIrrelevantChar(current_char))
+                    continue;
                 if (isVowel(current_char))
                     vowel_prefixed_words_count += 1;
+                words_count += 1;
             }
             else if (isIrrelevantChar(current_char))
             {
-                words_count += 1;
+
                 if (isConsonant(last_char))
                     consonant_sufixed_words_count += 1;
             }
             last_char = current_char;
         }
+
         printf("FILE --> %s\n", argv[text_i]);
         printf("#WORDS --> %d\n", words_count);
         printf("#VOWEL_PREFIXED --> %d\n", vowel_prefixed_words_count);

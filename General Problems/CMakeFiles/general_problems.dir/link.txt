@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/general_problems.dir/ex1.c.o -o general_problems 

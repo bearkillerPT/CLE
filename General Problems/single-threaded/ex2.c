@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 
-void print_squared_matrix(int size, int **matrix)
+void printSquaredMatrix(double **matrix, int size)
 {
     char number_buffer[20];
     char res[10000];
@@ -13,7 +13,7 @@ void print_squared_matrix(int size, int **matrix)
     {
         for (int j = 0; j < size; j++)
         {
-            sprintf(number_buffer, "%d", matrix[i][j]);
+            sprintf(number_buffer, "%lf", matrix[i][j]);
             strcat(res, number_buffer);
 
             if (j != size - 1)
@@ -29,77 +29,96 @@ void print_squared_matrix(int size, int **matrix)
     fflush(stdout);
 }
 
-int calculate_squared_matrix_determinant(int size, int **a, int show_decomposition)
+int findAndSwapZeroCoefCol(double **a, int size, int col_in)
 {
-    if (size == 2)
-        return a[0][0] * a[1][1] - a[0][1] * a[1][0];
-    else
+    int *first_col = calloc(size, sizeof(int));
+    int *second_col = calloc(size, sizeof(int));
+    int second_col_index = size;
+    for (int i = 0; i < size; i++)
     {
-        int a_det = 0;
-        for (int i = 0; i < size; i++)
-        {
-            int **sub_a = calloc(size - 1, sizeof(int *));
-            for (int sub_row = 0; sub_row < size - 1; sub_row++)
-                sub_a[sub_row] = calloc(size - 1, sizeof(int));
-            for (int a_row = 1; a_row < size; a_row++)
-            {
-                int sub_a_col = 0;
-                for (int a_col = 0; a_col < size; a_col++)
-                {
-                    if (a_col != i)
-                    {
-                        sub_a[a_row - 1][sub_a_col] = a[a_row][a_col];
-                        sub_a_col++;
-                    }
-                }
-            }
-            if (show_decomposition)
-            {
-                printf("(-1)^%d * %d * \n", i, a[0][i]);
-                print_squared_matrix(size - 1, sub_a);
-                if (i != size - 1)
-                    printf("+\n");
-                else
-                    printf("\n");
-            }
-            a_det += pow(-1, i) * a[0][i] * calculate_squared_matrix_determinant(size - 1, sub_a, show_decomposition);
-            for (int sub_row = 0; sub_row < size - 1; sub_row++)
-                free(sub_a[sub_row]);
-            free(sub_a);
-        }
-        return a_det;
+        first_col[i] = a[i][col_in];
+        if (i > col_in && a[col_in][i] == 0)
+            second_col_index = i;
     }
+    if (second_col_index == size)
+        return 0;
+    for (int i = 0; i < size; i++)
+        first_col[i] = a[i][second_col_index];
+    for (int i = 0; i < size; i++)
+    {
+        a[i][col_in] = second_col[i];
+        a[i][second_col_index] = first_col[i];
+    }
+    return -1;
 }
 
-int read_squared_matrix(int size, int **a, FILE *matrix_file)
-{
-    char c = 0;
-    int current_i = 0;
-    while ((c = fgetc(matrix_file)) != EOF)
+int gaussianElimination(double **a, int size)
+{ //returns the determinant sign (+det / -det)
+    int res_sign = 1;
+    for (int i = 0; i < size - 1; i++)
     {
-        if (c >= 48 && c <= 57)
+        if (a[i][i] == 0)
         {
-            a[current_i / size][current_i % size] = (int)c - 48;
-            current_i++;
+            int swap_res = findAndSwapZeroCoefCol(a, size, i);
+            if (swap_res == 0)
+                return 0;
+            res_sign *= swap_res;
+        }
+        for (int k = i + 1; k < size; k++)
+        {
+            for (int j = i; j < size; j++)
+            {
+                a[k][j] -= a[i][j] * a[k][i] / a[i][i];  
+            }
         }
     }
+    int res = 1;
+    for (int i = 0; i < size - 1; i++)
+    res *= a[i][i];
+    res *= res_sign;
+    return res;
+}
+double calculateSquareMatrixDeterminant(double **a, int size)
+{
+    gaussianElimination(size, a);
+
     return 0;
 }
 
-int calculate_squared_matrix_legnth(FILE *matrix_file)
+int readSquaredMatrixAndCalculateDeterminants(FILE *matrix_file)
 {
-    char c = 0;
-    int numbers_count = 0;
-    while ((c = fgetc(matrix_file)) != EOF)
+    int matrix_count = 0;
+    int current_matrix_index = 0;
+    int matrix_order = 0;
+    fread(&matrix_count, 1, sizeof(int), matrix_file);
+    fread(&matrix_order, 1, sizeof(int), matrix_file);
+    printf("%d %dx%d matrixs\n", matrix_count, matrix_order, matrix_order);
+    fflush(stdout);
+    double a = 0; //matrix entrie
+    int current_i = 0;
+
+    double **matrix = calloc(matrix_order, sizeof(double *));
+    for (int i = 0; i < matrix_order; i++)
+        matrix[i] = calloc(matrix_order, sizeof(double));
+
+    while ((fread(&a, 1, sizeof(double), matrix_file)) == sizeof(double))
     {
-        if (c >= 48 && c <= 57) //If its a number
-            numbers_count++;
+        matrix[current_i / matrix_order][current_i % matrix_order] = a;
+        current_i++;
+        if (current_i == matrix_order * matrix_order)
+        {
+            current_matrix_index++;
+            current_i = 0;
+            printf("Matrix_%d:%d %dx%d. Det -> %f\n", current_matrix_index, matrix_count, matrix_order, matrix_order, calculateSquareMatrixDeterminant(matrix, matrix_order));
+            printSquaredMatrix(matrix, matrix_order);
+            return 1;
+        }
     }
-    double length = sqrt(numbers_count);
-    if (length != (int)length)
-        return -1;
-    else
-        return length;
+
+    for (int i = 0; i < matrix_order; i++)
+        free(matrix[i]);
+    free(matrix);
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -108,50 +127,23 @@ int main(int argc, char *argv[])
 
     if (argc == 1)
     {
-        printf("Program Usage:\n\t ./ex2 [--show_decomposition]? (matrix*.txt)+");
+        printf("Program Usage:\n\t ./ex2 (matrix*.txt)+");
         return 1;
     }
     int matrix_i = 1;
-    int show_decomposition = 0;
-    if (strcmp(argv[1], "--show_decomposition") == 0)
-    {
-        matrix_i++;
-        show_decomposition = 1;
-    }
     for (; matrix_i < argc; matrix_i++)
     {
         FILE *matrix_file = fopen(argv[matrix_i], "r");
         if (matrix_file != NULL)
         {
-            int matrix_length = calculate_squared_matrix_legnth(matrix_file);
-
-            if (matrix_length == -1)
-            {
-                printf("The matrix given is not squared (judging by the amount of numbers given)!");
-                return 1;
-            }
-            int **matrix = calloc(matrix_length, sizeof(int *));
-            for (int i = 0; i < matrix_length; i++)
-                matrix[i] = calloc(matrix_length, sizeof(int));
-
-            printf("\n%s -> %d x %d matrix \n", argv[matrix_i], matrix_length, matrix_length);
-            fseek(matrix_file, 0, SEEK_SET);
-            read_squared_matrix(matrix_length, matrix, matrix_file);
-            print_squared_matrix(matrix_length, matrix);
-            if (show_decomposition)
-                printf("Solution decompostion:\n");
 
             clock_t t;
             t = clock();
-            printf("Matrix Determinant -> %d\n", calculate_squared_matrix_determinant(matrix_length, matrix, show_decomposition));
+            readSquaredMatrixAndCalculateDeterminants(matrix_file);
             t = clock() - t;
             double time_taken = ((double)t) / CLOCKS_PER_SEC;
             printf("The program took %f seconds to execute\n", time_taken);
             fclose(matrix_file);
-
-            for (int i = 0; i < matrix_length; i++)
-                free(matrix[i]);
-            free(matrix);
         }
         else
             printf("The provided file: %s\n couldn't be opened!\n", argv[matrix_i]);
