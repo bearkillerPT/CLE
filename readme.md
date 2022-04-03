@@ -5,13 +5,64 @@ There are 2 distinct problems to be solved. Firstly a single-threaded program in
 - MPI
 - CUDA
 
-The first exercie is to count the amount of words, of words prefixed by a vowel and of word sufixed by a consonant! The examples used to test are:
-1. text0.txt - 1000 words
-1. text1.txt - 10000 words
-1. text2.txt - 100000 words
+The first exercise is to count the amount of words, of words prefixed by a vowel and of word sufixed by a consonant! The examples used to test are:
+
+countWords/text0.txt:
+Words = 14
+
+countWords/text1.txt:
+Words = 1184
+
+countWords/text2.txt:
+Words = 11027
+
+countWords/text3.txt:
+Words = 3369
+
+countWords/text4.txt:
+Words = 9914
 
 The second exercise is to calculate a squared matrix determinant. The examples used to test are:
 
-1. matrix0.txt - 5 x 5
-1. matrix1.txt - 10 x 10
-1. matrix2.txt - 30 x 30
+| **long version**  | **short version** |
+|-------------------|-------------------|
+| • mat512_32.bin   | • mat128_32.bin     |
+| • mat512_64.bin   | • mat128_64.bin     |
+| • mat512_128.bin  | • mat128_128.bin    |
+| • mat512_256.bin  | • mat128_256.bin    |
+
+where in matx_y.bin x representes the number of squared matrixs in the file and y the order.
+## Results
+### Exercise 1:
+```
+countWords/text0.txt:
+Words = 14
+Words beginning with a vowel = 10
+Words ending with a consonant = 4
+Elapsed time: 0.000038 seconds
+
+countWords/text1.txt:
+Words = 1184
+Words beginning with a vowel = 381
+Words ending with a consonant = 365
+Elapsed time: 0.000235 seconds
+
+countWords/text2.txt:
+Words = 11027
+Words beginning with a vowel = 3648
+Words ending with a consonant = 3220
+Elapsed time: 0.001995 seconds
+
+countWords/text3.txt:
+Words = 3369
+Words beginning with a vowel = 1004
+Words ending with a consonant = 1054
+Elapsed time: 0.000622 seconds
+
+countWords/text4.txt:
+Words = 9914
+Words beginning with a vowel = 3095
+Words ending with a consonant = 3175
+```
+### Exercise 2:
+Still in the works.

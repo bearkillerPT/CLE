@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
         FILE *matrix_file = fopen(argv[matrix_i], "r");
         if (matrix_file != NULL)
         {
-            printf("Processing matrix %d\n", matrix_i);
+            printf("Processing matrix %d:\n", matrix_i);
             t1 = clock();
 
             int matrix_count, matrix_order;
@@ -115,8 +115,6 @@ int main(int argc, char *argv[])
             fread(&matrix_order, sizeof(int), 1, matrix_file);
             for (int matrix_i = 0; matrix_i < matrix_count; matrix_i++)
             {
-                printf("%d\n", matrix_count);
-                printf("%d\n", matrix_order);
                 double det = readSquaredMatrixAndCalculateDeterminant(matrix_file, matrix_order);
                 t += clock() - t1;
                 printf("The determinant is %E\n", det);
