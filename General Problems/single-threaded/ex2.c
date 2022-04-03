@@ -23,7 +23,6 @@ void printSquaredMatrix(double **matrix, int size)
 
 int findAndSwapCols(double **a, int size, int col_in)
 {
-    printf("CONA");
     double *first_col = calloc(size, sizeof(double));
     double *second_col = calloc(size, sizeof(double));
     int second_col_index = size;
@@ -46,7 +45,7 @@ int findAndSwapCols(double **a, int size, int col_in)
 }
 
 int gaussianElimination(double **a, int size)
-{ //returns the determinant sign (+det / -det)
+{ // returns the determinant sign (+det / -det)
     int res_sign = 1;
     for (int i = 0; i < size - 1; i++)
     {
@@ -61,7 +60,7 @@ int gaussianElimination(double **a, int size)
         {
             for (int j = i; j < size; j++)
             {
-                a[k][j] = a[k][j] - (a[k][i] / a[i][i]) * a[i][j];
+                a[k][j] -= (a[k][i] / a[i][i]) * a[i][j];
             }
         }
     }
@@ -74,17 +73,16 @@ double readSquaredMatrixAndCalculateDeterminant(FILE *matrix_file, int matrix_or
     for (int i = 0; i < matrix_order; i++)
     {
         matrix[i] = calloc(matrix_order, sizeof(double));
-        fread(matrix[i], sizeof(double), matrix_order, matrix_file);
+        for (int j = 0; j < matrix_order; j++)
+            fread(&matrix[i][j], sizeof(double), 1, matrix_file);
     }
-
     int det_sign = gaussianElimination(matrix, matrix_order);
     if (det_sign == 0)
         return 0;
     double det = 1;
-    for (int i = 0; i < matrix_order; i++) {
+    for (int i = 0; i < matrix_order; i++)
+    {
         det *= matrix[i][i];
-        printf("%lf\n", det);
-        printf("%lf\n\n", matrix[i][i]);
     }
     for (int i = 0; i < matrix_order; i++)
         free(matrix[i]);
@@ -121,7 +119,7 @@ int main(int argc, char *argv[])
                 printf("%d\n", matrix_order);
                 double det = readSquaredMatrixAndCalculateDeterminant(matrix_file, matrix_order);
                 t += clock() - t1;
-                printf("The determinant is %lf\n", det);
+                printf("The determinant is %E\n", det);
                 return 0;
             }
             double time_taken = ((double)t) / CLOCKS_PER_SEC;
