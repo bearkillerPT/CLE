@@ -1,181 +1,214 @@
-#include <wchar.h>
 #include <stdio.h>
-#include <locale.h>
 #include <time.h>
+#include <ctype.h>
 
-int isVowel(wchar_t char_in)
+/**
+ * Test se um determinado char for uma consoante (incluindo caracteres especiais portugueses e caso inferior/superior).
+ * não assinados Chars a serem testados
+ * @retorno 1 se consonante ou 0 de outra forma
+ */
+unsigned char is_consonant(unsigned char character)
 {
-    wchar_t special_vowels[30] = {0xC3A1, 0xC381, 0xC3A0, 0xC380, 0xC3A2, 0xC382, 0xC3A3, 0xC383, 0xC3A9, 0xC389, 0xC3A8, 0xC388, 0xC3AA, 0xC38A, 0xC3AD, 0xC38D, 0xC3AC, 0xC38C, 0xC3B3, 0xC393, 0xC3B2, 0xC392, 0xC3B4, 0xC394, 0xC3B5, 0xC395, 0xC3BA, 0xC39A, 0xC3B9, 0xC399};
-    if (char_in >= 65 && char_in <= 90 || char_in >= 97 && char_in <= 122)
-    { //this line check if you have entered a char_in based on the ascii chart
-        if (char_in == 'a' || char_in == 'A' || char_in == 'e' || char_in == 'E' || char_in == 'i' || char_in == 'I' || char_in == 'o' || char_in == 'O' || char_in == 'u' || char_in == 'U')
-            return 1; //Vowel
-    }
-    else
+    return((character >= 0x62 && character <= 0x64) ||
+           (character >= 0x66 && character <= 0x68) ||
+           (character >= 0x6A && character <= 0x6E) ||
+           (character >= 0x70 && character <= 0x74) ||
+           (character >= 0x76 && character <= 0x7A) ||
+           (character >= 0x42 && character <= 0x44) ||
+           (character >= 0x46 && character <= 0x48) ||
+           (character >= 0x4A && character <= 0x4E) ||
+           (character >= 0x50 && character <= 0x54) ||
+           (character >= 0x56 && character <= 0x5A));
+}
+
+/**
+ * Test se um determinado char for uma vogal (incluindo caracteres especiais portugueses e caixa superior/inferior).
+ * não assinados Chars a serem testados
+ * @retorno 1 se vogal ou 0 de outra forma
+ */
+unsigned char is_vowel(unsigned char character)
+{
+    return((character == 0x61 || character == 0x41) ||
+           (character == 0x65 || character == 0x45) ||
+           (character == 0x69 || character == 0x49) ||
+           (character == 0x6f || character == 0x4F) ||
+           (character == 0x75 || character == 0x55));
+}
+
+/**
+ * Test se um determinado char for número ou sublinhado.
+ * não assinados Chars a ser testado
+ * @retorno 1 se verdadeiro ou 0 de outra forma
+ */
+unsigned char is_number_underscore(unsigned char character)
+{
+    return((character >= 0x30 && character <= 0x39) || character == 0x5F);
+}
+
+/**
+ * @Testar se um determinado char for apóstrofo ou aspas.
+ * @não assinados Chars a serem testados
+ * @return 1 se verdadeiro ou 0 de outra forma 
+ */
+unsigned char is_marks(unsigned char character)
+{
+    return(character == 0x27 || character == 0x98 || character == 0x99);
+}
+
+/**
+ * Converter um char especial na sua forma base.
+ * char a ser testado
+ */
+void special_character_to_normal(char* character)
+{
+    if(((unsigned char) *character >= 0xA0 && (unsigned char) *character <= 0xA3) || ((unsigned char) *character >= 0x80 && (unsigned char) *character <= 0x83))
+        *character = 0x61;
+    if(((unsigned char) *character >= 0xA8 && (unsigned char) *character <= 0xAA) || ((unsigned char) *character >= 0x88 && (unsigned char) *character <= 0x8A))
+        *character = 0x65;
+    if(((unsigned char) *character >= 0xAC && (unsigned char) *character <= 0xAD) || ((unsigned char) *character >= 0x8C && (unsigned char) *character <= 0x8D))
+        *character = 0x69;
+    if(((unsigned char) *character >= 0xB2 && (unsigned char) *character <= 0xB5) || ((unsigned char) *character >= 0x92 && (unsigned char) *character <= 0x95))
+        *character = 0x6F;
+    if(((unsigned char) *character >= 0xB9 && (unsigned char) *character <= 0xBA) || ((unsigned char) *character >= 0x99 && (unsigned char) *character <= 0x9A))
+        *character = 0x75;
+    if(((unsigned char) *character == 0xA7 || (unsigned char) *character == 0x87))
+        *character = 0x63;
+}
+
+/**
+ * Dado um char, verificar se é whitespace
+ * separador, nova linha ou char de retorno de carruagem ou qualquer separador (incluindo a pontuação).
+ * Para multibytes, tem em conta apenas o último byte, pelo que o processamento da sequência de multibytes
+ * é necessário antes de chamar esta função.
+ * unsigned char Char to be tested
+ * @return 1 if separator or 0 otherwise
+ */
+unsigned char is_separator(unsigned char character)
+{
+    return(character == 0x20 || character == 0x9 || character == 0xA || character == 0xD ||
+           character == 0x2D || character == 0x22 || character == 0x9D || character == 0x5B ||
+           character == 0x5D || character == 0x28 || character == 0x29 || character == 0x2E ||
+           character == 0x2C || character == 0x3A || character == 0x3B || character == 0x3F ||
+           character == 0x21 || character == 0x93 || character == 0xA6 || character == 0xAB ||
+           character == 0xBB);
+}
+
+/**
+ * Test se um determinado personagem for um personagem multibyte e consumir bytes extra.
+ * Após processamento, o char de entrada terá o último byte da sequência de bytes múltiplos.
+ * Chars a serem testados
+ * Entrada de fluxo de ficheiros
+ */
+void process_multibyte(char* character, FILE* file)
+{
+    if(((unsigned char) *character & 0xF8) == 0xF0)
     {
-        for (int special_vowel_i = 0; special_vowel_i < 30; special_vowel_i++)
+        // 4 bytes char
+        *character = fgetc(file);
+        *character = fgetc(file);
+        *character = fgetc(file);
+    }
+    else if(((unsigned char) *character & 0xF0) == 0xE0)
+    {
+        // 3 bytes char
+        *character = fgetc(file);
+        *character = fgetc(file);
+    }
+    else if(((unsigned char) *character & 0xE0) == 0xC0)
+    {
+        // 2 bytes char
+        *character = fgetc(file);
+        special_character_to_normal(character);
+    }
+}
+
+/**
+ * Dado um conjunto de ficheiros de texto, conta o número de palavras
+ * bem como o número de palavras que começam com uma vogal
+ * e número de palavras que terminam com uma consoante para cada ficheiro
+ * tendo em conta o alfabeto português.
+ * Número de argumentos a partir da linha de comando
+ * Entradas de argumentos a partir da linha de comando
+ * @return Código de erro de 1 em caso de erro, 0 em caso contrário
+ */
+
+
+int main(int argc, char **argv)
+{
+    if(argc < 2)
+    {
+        fprintf(stderr, "Nº de Argumentos insuficientes\n");
+        return 1;
+    }
+    double total_time = 0;
+    for(int i = 1; i < argc; i++)
+    {
+        clock_t timer = clock();
+        FILE *file = fopen(argv[i], "r");
+        if(file == NULL)
         {
-            if ((int)char_in == special_vowels[special_vowel_i])
-                return 1;
+            fprintf(stderr, "Não consegue ler o ficheiro ", argv[i]);
+            continue;
         }
-        return 0; //Not a vowel
-    }
-    return 0; //Not a vowel
-}
-
-int isConsonant(wchar_t char_in)
-{
-    if (char_in == 0xC387 || char_in == 0xC3A7) // ç || Ç
-        return 1;
-    if (!isVowel(char_in))
-        if (char_in >= 65 && char_in <= 90 || char_in >= 97 && char_in <= 122)
-            return 1;
-    return 0;
-}
-
-int isMergeSymbol(wchar_t char_in)
-{
-
-    if (char_in == 0x27 || char_in == 0xE28098 || char_in == 0xE28099)
-        return 1;
-    return 0;
-}
-
-int isPonctuationSymbol(wchar_t char_in)
-{
-    if ((wchar_t)char_in == '.' || (wchar_t)char_in == ',' || (wchar_t)char_in == ':' || (wchar_t)char_in == ';' || (wchar_t)char_in == '?' || (wchar_t)char_in == '!' || char_in == 0xE28098 || char_in == 0xE280A6)
-        return 1;
-    return 0;
-}
-
-int isSeparationSymbol(wchar_t char_in)
-{
-    if (char_in == 0x22 || char_in == 0xE2809C || char_in == 0xe2809D || (wchar_t)char_in == '-' || char_in == 0xE28093 || (wchar_t)char_in == '[' || (wchar_t)char_in == ']' || (wchar_t)char_in == '(' || (wchar_t)char_in == ')')
-        return 1;
-    return 0;
-}
-
-int isWhiteSpace(wchar_t char_in)
-{
-    if (char_in == 0x20 || char_in == 0x9 || char_in == 0xA || char_in == 0xD)
-        return 1;
-    return 0;
-}
-
-int isIrrelevantChar(wchar_t char_in)
-{
-    return isWhiteSpace(char_in) ||
-           isSeparationSymbol(char_in) ||
-           isPonctuationSymbol(char_in);
-}
-
-//Get a utf8 char!
-int fgetutf8c(FILE *f)
-{
-    int result = 0;
-    int input[6] = {};
-
-    input[0] = fgetc(f);
-    if (input[0] == EOF)
-    {
-        // The EOF was hit by the first character.
-        result = EOF;
-    }
-    else if (input[0] < 0x80) //0xxxxxxx
-    {
-        // the first character is the only 7 bit sequence...
-        result = input[0];
-    }
-    else if ((input[0] & 0xE0) == 0xC0) //10xxxxxx 10xxxxxx
-    {
-        // This is a 2 byte utf8-char!
-        input[1] = fgetc(f);
-        result = ((input[0]) << 8) + input[1];
-    }
-    else if ((input[0] & 0xF0) == 0xE0) //110xxxxx 10xxxxxx 10xxxxxx
-    {
-        // This is a 3 byte utf8-char!
-        input[1] = fgetc(f);
-        input[2] = fgetc(f);
-        result = (input[0] << 16) + (input[1] << 8) + input[2];
-    }
-    else if ((input[0] & 0xF8) == 0xF0) //1110xxxx 10xxxxxx 10xxxxxx 10xxxxxx
-    {
-        // This is a 4 byte utf8-char!
-        input[1] = fgetc(f);
-        input[2] = fgetc(f);
-        input[3] = fgetc(f);
-        result = (input[0] << 24) + (input[1] << 16) + (input[2] << 8) + input[3];
-    }
-    else
-        return EOF;
-    return result;
-}
-
-int main(int argc, char *argv[])
-{
-    printf("Running ex1!\n\n");
-    setlocale(LC_CTYPE, "pt_PT.UTF-8");
-    if (argc == 1)
-    {
-        printf("Program Usage:\n\t ./ex1 (text*.txt)+");
-        return 1;
-    }
-    for (int text_i = 1; text_i < argc; text_i++)
-    {
-        clock_t t;
-        FILE *text_file = fopen(argv[text_i], "r");
-        if (text_file == NULL)
+        char in_word_flag = 0;
+        char in_consonant_flag = 0;
+        int word_count = 0;
+        int vowel_count = 0;
+        int consonant_count = 0;
+        char character = 0;
+        while((character = getc(file)) != EOF)
         {
-            printf("The text file: %s could not be read!", argv[text_i]);
-            return 1;
-        }
-        t = clock();
-        wchar_t last_char = ' ';
-        wchar_t current_char;
-        int vowel_prefixed_words_count = 0;
-        int consonant_sufixed_words_count = 0;
-        int words_count = 0;
-        int merge_symbols_count = 0;
-        int last_words_count = 0;
-        while ((current_char = fgetutf8c(text_file)) != WEOF)
-        {
-            if (isMergeSymbol(current_char))
+            process_multibyte(&character, file);
+            // test words
+            if(in_word_flag)
             {
-                merge_symbols_count++;
-                if (merge_symbols_count % 2 == 0 && words_count == last_words_count+2) {
-                    words_count -= 1;
-                    printf("last_words_count: %d\n\n", last_words_count);
-                    printf("words_count: %d\n", words_count);
+                // continuar a ler palavra
+                if(is_separator(character))
+                {
+                    if(in_consonant_flag)
+                        consonant_count++;
+                    in_consonant_flag = 0;
+                    in_word_flag = 0;
                 }
-                else
-                    last_words_count = words_count;
+                in_word_flag = (is_vowel(character) || is_consonant(character) || is_number_underscore(character) || is_marks(character));
+                in_consonant_flag = is_consonant(character) ? 1 : 0;
             }
-            if (isIrrelevantChar(last_char))
+            else
             {
-                if (isIrrelevantChar(current_char))
-                    continue;
-                if (isVowel(current_char))
-                    vowel_prefixed_words_count += 1;
-                words_count += 1;
+                // novas palavras
+                if(is_vowel(character) || is_consonant(character) || is_number_underscore(character))
+                {
+                    if(is_vowel(character))
+                        vowel_count++;
+                    if(is_consonant(character))
+                        in_consonant_flag = 1;
+                    in_word_flag = 1;
+                    word_count++;
+                } 
+                if(is_separator(character) || is_marks(character))
+                {
+                    if(in_consonant_flag)
+                        consonant_count++;
+                    in_consonant_flag = 0;
+                    in_word_flag = 0;
+                }
             }
-            else if (isIrrelevantChar(current_char))
-            {
-
-                if (isConsonant(last_char))
-                    consonant_sufixed_words_count += 1;
-            }
-            last_char = current_char;
         }
-
-        printf("FILE --> %s\n", argv[text_i]);
-        printf("#WORDS --> %d\n", words_count);
-        printf("#VOWEL_PREFIXED --> %d\n", vowel_prefixed_words_count);
-        printf("#CONSONANT_SUFIXED --> %d\n", consonant_sufixed_words_count);
-        t = clock() - t;
-        double time_taken = ((double)t) / CLOCKS_PER_SEC;
-        printf("The program took %f seconds to execute\n\n", time_taken);
-        fclose(text_file);
+        
+        if(in_consonant_flag)
+            consonant_count++;
+        if(in_word_flag)
+            word_count++;
+        fclose(file);
+        fprintf(stdout, "\nCounts for file \"%s\":\n", argv[i]);
+        fprintf(stdout, "Words = %d\n", word_count);
+        fprintf(stdout, "Words beginning with a vowel = %d\n", vowel_count);
+        fprintf(stdout, "Words ending with a consonant = %d\n", consonant_count);
+        timer = clock() - timer;
+        double elapsed_time = ((double) timer) / CLOCKS_PER_SEC;
+        total_time += elapsed_time;
+        fprintf(stdout, "Elapsed time: %f seconds\n", elapsed_time);
     }
+    fprintf(stdout, "\nTotal elapsed time from all files: %f seconds\n", total_time);
     return 0;
 }
