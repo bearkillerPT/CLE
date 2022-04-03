@@ -5,23 +5,24 @@ There are 2 distinct problems to be solved. Firstly a single-threaded program in
 - MPI
 - CUDA
 
+### Exercise 1:
 The first exercise is to count the amount of words, of words prefixed by a vowel and of word sufixed by a consonant! The examples used to test are:
 
 countWords/text0.txt:
-Words = 14
+    total_words = 14
 
 countWords/text1.txt:
-Words = 1184
+    total_words = 1184
 
 countWords/text2.txt:
-Words = 11027
+    total_words = 11027
 
 countWords/text3.txt:
-Words = 3369
+    total_words = 3369
 
 countWords/text4.txt:
-Words = 9914
-
+    total_words = 9914
+### Exercise 2:
 The second exercise is to calculate a squared matrix determinant. The examples used to test are:
 
 | **long version**  | **short version** |
@@ -31,7 +32,7 @@ The second exercise is to calculate a squared matrix determinant. The examples u
 | • mat512_128.bin  | • mat128_128.bin    |
 | • mat512_256.bin  | • mat128_256.bin    |
 
-where in matx_y.bin x representes the number of squared matrixs in the file and y the order.
+where in matx_y.bin, x representes the number of squared matrixs in the file and y the order.
 ## Results
 ### Exercise 1:
 ```
