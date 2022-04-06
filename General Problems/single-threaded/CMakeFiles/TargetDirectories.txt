@@ -1,4 +1,0 @@
-/home/bearkiller/dev/CLE/General Problems/single-threaded/CMakeFiles/ex1.dir
-/home/bearkiller/dev/CLE/General Problems/single-threaded/CMakeFiles/ex2.dir
-/home/bearkiller/dev/CLE/General Problems/single-threaded/CMakeFiles/edit_cache.dir
-/home/bearkiller/dev/CLE/General Problems/single-threaded/CMakeFiles/rebuild_cache.dir
