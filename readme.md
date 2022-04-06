@@ -5,6 +5,19 @@ There are 2 distinct problems to be solved. Firstly a single-threaded program in
 - MPI
 - CUDA
 
+## Hot to build:
+```
+mkdir build;
+cd build;
+cmake ..;
+make;
+```
+
+call executables:
+```
+./ex1 ../countWords/text0.txt ../countWords/text1.txt ../countWords/text2.txt ../countWords/text3.txt ../countWords/text4.txt 
+./ex2 ../computeDet/mat128_32.bin #../computeDet/mat128_64.bin ../computeDet/mat128_128.bin ../computeDet/mat128_256.bin 
+```
 ### Exercise 1:
 The first exercise is to count the amount of words, of words prefixed by a vowel and of word sufixed by a consonant! The examples used to test are:
 
