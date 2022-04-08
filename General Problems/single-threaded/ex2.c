@@ -7,12 +7,12 @@
 void printSquaredMatrix(double **matrix, int size)
 {
     char number_buffer[20];
-    char res[10000];
+    char res[100000];
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
         {
-            sprintf(number_buffer, "%lf ", matrix[i][j]);
+            sprintf(number_buffer, "%e ", matrix[i][j]);
             strcat(res, number_buffer);
         }
         strcat(res, "\n\n");
@@ -41,27 +41,28 @@ int findAndSwapCols(double **a, int size, int col_in)
         a[i][col_in] = second_col[i];
         a[i][second_col_index] = first_col[i];
     }
+    free(first_col);
+    free(second_col);
     return -1;
 }
 
-int gaussianElimination(double **a, int size)
+int gaussianElimination(double **a, int matrix_order)
 { // returns the determinant sign (+det / -det)
     int res_sign = 1;
-    for (int i = 0; i < size - 1; i++)
+    for (int i = 0; i < matrix_order - 1; i++)
     {
         if (a[i][i] == 0)
         {
-            int swap_res = findAndSwapCols(a, size, i);
+            int swap_res = findAndSwapCols(a, matrix_order, i);
             if (swap_res == 0)
                 return 0;
             res_sign *= swap_res;
         }
-        for (int k = i + 1; k < size; k++)
+        for (int k = i + 1; k < matrix_order; k++)
         {
-            for (int j = i; j < size; j++)
-            {
-                a[k][j] -= (a[k][i] / a[i][i]) * a[i][j];
-            }
+            double ratio = (a[k][i] / a[i][i]);
+            for (int j = i; j < matrix_order; j++)
+                a[k][j] -= ratio * a[i][j];
         }
     }
     return res_sign;
@@ -79,7 +80,7 @@ double readSquaredMatrixAndCalculateDeterminant(FILE *matrix_file, int matrix_or
     int det_sign = gaussianElimination(matrix, matrix_order);
     if (det_sign == 0)
         return 0;
-    double det = 1;
+    double det = det_sign;
     for (int i = 0; i < matrix_order; i++)
     {
         det *= matrix[i][i];
@@ -87,7 +88,7 @@ double readSquaredMatrixAndCalculateDeterminant(FILE *matrix_file, int matrix_or
     for (int i = 0; i < matrix_order; i++)
         free(matrix[i]);
     free(matrix);
-    return det_sign * det;
+    return det;
 }
 
 int main(int argc, char *argv[])
@@ -107,7 +108,6 @@ int main(int argc, char *argv[])
         FILE *matrix_file = fopen(argv[matrix_i], "r");
         if (matrix_file != NULL)
         {
-            printf("Processing matrix %d:\n", matrix_i);
             t1 = clock();
 
             int matrix_count, matrix_order;
@@ -115,10 +115,10 @@ int main(int argc, char *argv[])
             fread(&matrix_order, sizeof(int), 1, matrix_file);
             for (int matrix_i = 0; matrix_i < matrix_count; matrix_i++)
             {
+                printf("Processing matrix %d:\n", matrix_i+1);
                 double det = readSquaredMatrixAndCalculateDeterminant(matrix_file, matrix_order);
                 t += clock() - t1;
-                printf("The determinant is %E\n", det);
-                return 0;
+                printf("The determinant is %e\n", det);
             }
             double time_taken = ((double)t) / CLOCKS_PER_SEC;
             printf("Elapsed time = %lf s\n", time_taken);
