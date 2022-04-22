@@ -7,7 +7,7 @@
 #include <time.h>
 #include "fifo.h"
 
-#define nConsumers 100
+#define nConsumers 2
 /** \brief producer threads return status array */
 // int statusProd[nConsumers];
 
@@ -117,6 +117,7 @@ void *calculateDeterminant(void *result)
         {
             det *= matrix->matrix[i][i];
         }
+        
         struct consumer_res_t current_res;
         current_res.det = det;
         current_res.matrix_id = matrix->id;
@@ -157,7 +158,7 @@ void *produceMatrix(void *matrix_file_arg)
                 for (int j = 0; j < matrix_order; j++)
                     fread(&matrix[i][j], sizeof(double), 1, matrix_file);
             }
-            struct matrix_t *matrix_struct = calloc(1, sizeof(struct matrix_t));
+            struct matrix_t *matrix_struct = malloc(sizeof(struct matrix_t));
             matrix_struct->id = (matrix_file_i + 1) * (matrix_i + 1);
             matrix_struct->matrix = matrix;
             matrix_struct->size = matrix_order;
@@ -211,13 +212,12 @@ int main(int argc, char *argv[])
         pthread_join(matrixSolvers[i], NULL);
     }
     clock_gettime(CLOCK_MONOTONIC, &finish);
-    
     for (int i = 0; i < nConsumers; i++)
     {
-        //    for (int result_i = 0; result_i < detResults->size; result_i++)
-        //    {
-        //        printf("Processing Matrix %d:\n The determinant is: %e\n", detResults[i].results[result_i].matrix_id, detResults[i].results[result_i].det);
-        //    }
+        for (int result_i = 0; result_i < detResults[i].size; result_i++)
+        {
+            printf("Processing Matrix %d:\n The determinant is: %e\n", detResults[i].results[result_i].matrix_id, detResults[i].results[result_i].det);
+        }
         free(detResults[i].results);
     }
     free(detResults);
