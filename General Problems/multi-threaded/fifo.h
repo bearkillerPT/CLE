@@ -36,7 +36,7 @@ typedef struct matrix_t
 
 static void initialization(void);
 
-extern int isEmpty(void);
+extern void setDone(void);
 
 extern void putVal(struct matrix_t *val);
 

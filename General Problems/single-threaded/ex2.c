@@ -115,18 +115,18 @@ int main(int argc, char *argv[])
             fread(&matrix_order, sizeof(int), 1, matrix_file);
             for (int matrix_i = 0; matrix_i < matrix_count; matrix_i++)
             {
-                printf("Processing matrix %d:\n", matrix_i+1);
+                printf("Processing matrix %d:\n", matrix_i + 1);
                 double det = readSquaredMatrixAndCalculateDeterminant(matrix_file, matrix_order);
-                t += clock() - t1;
                 printf("The determinant is %e\n", det);
             }
-            double time_taken = ((double)t) / CLOCKS_PER_SEC;
-            printf("Elapsed time = %lf s\n", time_taken);
+            t += clock() - t1;
             fclose(matrix_file);
         }
         else
             printf("The provided file: %s\n couldn't be opened!\n", argv[matrix_i]);
     }
 
+    double time_taken = ((double)t) / CLOCKS_PER_SEC;
+    printf("Elapsed time = %lf s\n", time_taken);
     return 0;
 }

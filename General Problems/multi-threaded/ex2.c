@@ -3,10 +3,10 @@
 #include <math.h>
 #include <unistd.h>
 #include <string.h>
-#include <time.h>
 #include <pthread.h>
 #include "fifo.h"
 
+#define nConsumers 100
 /** \brief producer threads return status array */
 // int statusProd[nConsumers];
 
@@ -16,6 +16,18 @@ typedef struct producer_args_t
 {
     FILE **matrix_files;
     int total_files;
+};
+
+typedef struct consumer_res_t
+{
+    double det;
+    int matrix_id;
+};
+
+typedef struct consumer_args_t
+{
+    struct consumer_res_t *results;
+    int size;
 };
 
 void printSquaredMatrix(double **matrix, int size)
@@ -84,34 +96,43 @@ int gaussianElimination(double **a, int matrix_order)
 
 void *calculateDeterminant(void *result)
 {
+    int current_matrix_i = 0;
     while (1)
     {
-        usleep((unsigned int)floor(40.0 * random() / RAND_MAX + 1.5)); /* do something else */
 
-        double *res = (double *)result;
-        printf("status: %d && isEmpty(): %d\n", status, isEmpty());
-        if (status == EXIT_SUCCESS && !isEmpty())
+        struct consumer_args_t *res = (struct consumer_args_t *)result;
+        // printf("%d\n",status);
+        struct matrix_t *matrix = getVal();
+        if (matrix == NULL)
+        {
+            res->size = current_matrix_i;
             pthread_exit(EXIT_SUCCESS);
-        else{
-            //printf("%d\n",status);
-            struct matrix_t *matrix = getVal();
-            int det_sign = gaussianElimination(matrix->matrix, matrix->size);
-            if (det_sign == 0)
-                return 0;
-            double det = det_sign;
-            for (int i = 0; i < matrix->size; i++)
-            {
-                det *= matrix->matrix[i][i];
-            }
-            *res = det;
-            for (int i = 0; i < matrix->size; i++)
-                free(matrix->matrix[i]);
-            free(matrix->matrix);
-            free(matrix);
         }
+        int det_sign = gaussianElimination(matrix->matrix, matrix->size);
+        if (det_sign == 0)
+            return 0;
+        double det = det_sign;
+        for (int i = 0; i < matrix->size; i++)
+        {
+            det *= matrix->matrix[i][i];
+        }
+        struct consumer_res_t current_res;
+        current_res.det = det;
+        current_res.matrix_id = matrix->id;
+        if (current_matrix_i >= res->size)
+        {
+            res->results = realloc(res->results, (res->size + 10) * sizeof(struct consumer_res_t));
+            res->size += 10;
+        }
+        res->results[current_matrix_i] = current_res;
+        for (int i = 0; i < matrix->size; i++)
+            free(matrix->matrix[i]);
+        free(matrix->matrix);
+        free(matrix);
+        current_matrix_i++;
+        usleep((unsigned int)floor(40.0 * random() / RAND_MAX + 1.5)); /* do something else */
     }
 }
-
 void *produceMatrix(void *matrix_file_arg)
 {
     struct producer_args_t *args = (struct producer_args_t *)matrix_file_arg;
@@ -136,7 +157,7 @@ void *produceMatrix(void *matrix_file_arg)
                     fread(&matrix[i][j], sizeof(double), 1, matrix_file);
             }
             struct matrix_t *matrix_struct = calloc(1, sizeof(struct matrix_t));
-            matrix_struct->id = (matrix_file_i+1) * (matrix_i+1);
+            matrix_struct->id = (matrix_file_i + 1) * (matrix_i + 1);
             matrix_struct->matrix = matrix;
             matrix_struct->size = matrix_order;
             putVal(matrix_struct);
@@ -145,6 +166,7 @@ void *produceMatrix(void *matrix_file_arg)
         fclose(args->matrix_files[matrix_file_i]);
     }
     status = EXIT_SUCCESS;
+    setDone();
     pthread_exit(&status);
 }
 
@@ -154,17 +176,15 @@ int main(int argc, char *argv[])
 
     if (argc == 1)
     {
-        printf("Program Usage:\n\t ./ex2 (matrix*.txt)+");
+        printf("Program Usage:\n\t ./ex2 (matrix*.txt)+\n");
         return 1;
     }
-    clock_t t, t1;
-    t = 0;
+    clock_t startClock, endClock;
+    startClock = clock();
     pthread_t producer;
-    int nConsumers = 128;
     FILE **files = calloc(argc - 1, sizeof(FILE *));
     for (int matrix_i = 1; matrix_i < argc; matrix_i++)
     {
-        t1 = clock();
         files[matrix_i - 1] = fopen(argv[matrix_i], "r");
     }
     struct producer_args_t *args = calloc(1, sizeof(struct producer_args_t));
@@ -176,9 +196,11 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     pthread_t matrixSolvers[nConsumers];
-    double detResults[nConsumers];
+    struct consumer_args_t* detResults = calloc(nConsumers, sizeof(struct consumer_args_t));
     for (int i = 0; i < nConsumers; i++)
     {
+        detResults[i].size = 10;
+        detResults[i].results = malloc(10 * sizeof(struct consumer_res_t));
         pthread_create(&matrixSolvers[i], NULL, calculateDeterminant, (void *)&detResults[i]);
     }
     pthread_join(producer, NULL);
@@ -186,13 +208,17 @@ int main(int argc, char *argv[])
     {
         pthread_join(matrixSolvers[i], NULL);
     }
+    endClock = clock();
     for (int i = 0; i < nConsumers; i++)
     {
-        printf("Processing Matrix %d:\n The determinant is: %e\n", i, detResults[i]);
+    //    for (int result_i = 0; result_i < detResults->size; result_i++)
+    //    {
+    //        printf("Processing Matrix %d:\n The determinant is: %e\n", detResults[i].results[result_i].matrix_id, detResults[i].results[result_i].det);
+    //    }
+        free(detResults[i].results);
     }
-
-    double time_taken = ((double)t) / CLOCKS_PER_SEC;
+    free(detResults);
+    double time_taken = ((double)(endClock - startClock)) / CLOCKS_PER_SEC;
     printf("Elapsed time = %lf s\n", time_taken);
-
     return 0;
 }
