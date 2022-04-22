@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
 #include "fifo.h"
 
 #define nConsumers 100
@@ -179,8 +180,9 @@ int main(int argc, char *argv[])
         printf("Program Usage:\n\t ./ex2 (matrix*.txt)+\n");
         return 1;
     }
-    clock_t startClock, endClock;
-    startClock = clock();
+    struct timespec start, finish;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_t producer;
     FILE **files = calloc(argc - 1, sizeof(FILE *));
     for (int matrix_i = 1; matrix_i < argc; matrix_i++)
@@ -196,7 +198,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     pthread_t matrixSolvers[nConsumers];
-    struct consumer_args_t* detResults = calloc(nConsumers, sizeof(struct consumer_args_t));
+    struct consumer_args_t *detResults = calloc(nConsumers, sizeof(struct consumer_args_t));
     for (int i = 0; i < nConsumers; i++)
     {
         detResults[i].size = 10;
@@ -208,17 +210,21 @@ int main(int argc, char *argv[])
     {
         pthread_join(matrixSolvers[i], NULL);
     }
-    endClock = clock();
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+    
     for (int i = 0; i < nConsumers; i++)
     {
-    //    for (int result_i = 0; result_i < detResults->size; result_i++)
-    //    {
-    //        printf("Processing Matrix %d:\n The determinant is: %e\n", detResults[i].results[result_i].matrix_id, detResults[i].results[result_i].det);
-    //    }
+        //    for (int result_i = 0; result_i < detResults->size; result_i++)
+        //    {
+        //        printf("Processing Matrix %d:\n The determinant is: %e\n", detResults[i].results[result_i].matrix_id, detResults[i].results[result_i].det);
+        //    }
         free(detResults[i].results);
     }
     free(detResults);
-    double time_taken = ((double)(endClock - startClock)) / CLOCKS_PER_SEC;
+    free(args);
+    free(files);
+    double time_taken = (finish.tv_sec - start.tv_sec);
+    time_taken += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
     printf("Elapsed time = %lf s\n", time_taken);
     return 0;
 }
