@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/ex1.dir/main.c.o CMakeFiles/ex1.dir/sharedRegion.c.o -o ex1  -lm -pthread 
