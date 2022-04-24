@@ -10,7 +10,7 @@
 #include "main_functions.h"
 
 /** variables to define the size of the buffer*/
-int MAX_SIZE_WORD = 50;
+int MAX_SIZE_WORD = 60;
 int MAX_BYTES_TO_READ = 12;
 
 /** \brief worker life cycle routine */
@@ -19,15 +19,15 @@ static void *worker(void *id);
 /**
  *  \brief Main thread.
  *
- *  Its role is store the filenames in the shared region; starting the simulation by generating the intervening workers and
- *  waiting for their termination; and also check and show the results;
+ *  Store the filenames in the shared region;  create the workers and
+ *  waiting for their termination; print the results;
  *
  */
 
 int main(int argc, char *argv[])
 {
 
-    int nThreads = atoi(argv[1]); /* number of workers to create */
+    int nThreads = atoi(argv[1]); /* nº of workers to create */
 
     char *filenames[argc - 2]; /* file names */
 
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     clock_gettime(CLOCK_MONOTONIC, &tStart); /* start counting time of execution */
 
     pthread_t tIdWork[nThreads]; /* workers internal thread id array */
-    unsigned int work[nThreads]; /* workers application defined thread id array */
+    unsigned int work[nThreads]; /* workers defined thread id array */
     int *status_p;               /* pointer to execution status */
 
     int t;
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
     for (t = 0; t < nThreads; t++)
     {
-        if (pthread_join(tIdWork[t], (void *)&status_p) != 0) /* wait for thread worker to terminate */
+        if (pthread_join(tIdWork[t], (void *)&status_p) != 0) /* wait for thread worker */
         {
             perror("error on waiting for thread producer");
             exit(EXIT_FAILURE);
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
         printf("thread worker, with id %u, has terminated. \n", t);
     }
 
-    printProcessingResults(); /* print results */
+    printProcessingResults(); /* results */
 
     printf("Terminated.\n");
 
@@ -86,17 +86,7 @@ int main(int argc, char *argv[])
 }
 
 /**
- *  \brief Function processDataChunk.
- *
- *  Processing of a data chunk.
- *      -If in_word is false:
- *          -if the char is alphanumeric or underscore, in_word is set to true, and we increment the total words
- *          -if the char is apostrophe or space/separation/punctiation, in_word remains set to false
- *      -If in_word is true:
- *          -if the char is alpha or underscore, we increment chars and consonants;
- *          -if char is apostrophe, we return;
- *          -if char is space/separation/punctiation, we set in_word to false and update the word couting
- *
+ *  \brief Function processDataChunk
  */
 
 void processDataChunk(char *buf, PARTFILEINFO *partialInfo)
@@ -154,7 +144,7 @@ void processDataChunk(char *buf, PARTFILEINFO *partialInfo)
 /**
  *  \brief Function worker.
  *
- *  Its role is to obtain data chunks, process them and store the results in shared region.
+ *  Get data chunks, process them and store the results in shared region.
  *
  */
 
@@ -163,16 +153,16 @@ static void *worker(void *par)
 
     unsigned int id = *((unsigned int *)par); /* worker id */
 
-    /* buffer has size of MAX_BYTES_TO_READ bytes + MAX_SIZE_WORD -> this way,
-    we prevent the case where the last word that was readen is not complete. It will be a set of complete words. */
+    /* buffer has size  = MAX_BYTES_TO_READ bytes + MAX_SIZE_WORD 
+    Will be a set of complete words. */
     char buf[MAX_BYTES_TO_READ + MAX_SIZE_WORD];
 
-    PARTFILEINFO partialInfo; /* struct to store partial info of current file being processed */
+    PARTFILEINFO partialInfo; /* struct to store partial info */
 
     while (getDataChunk(id, buf, &partialInfo) != 1)
-    {                                         /* while data available */
-        processDataChunk(buf, &partialInfo);  /* process current data*/
-        savePartialResults(id, &partialInfo); /* save in shared region */
+    {                                         
+        processDataChunk(buf, &partialInfo);  
+        savePartialResults(id, &partialInfo); 
     }
 
     int status = EXIT_SUCCESS;

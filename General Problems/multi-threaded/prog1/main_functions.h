@@ -6,7 +6,7 @@
 #include <locale.h>
 
 
-/* check if is vowel | 1-> is vowel */
+/* check if is vowel */
 int is_vowel(unsigned char c){
     if(c=='a' || c=='e' || c=='i' || c=='o' || c=='u'){
         return 1;
@@ -19,7 +19,7 @@ int is_vowel(unsigned char c){
     }
 }
 
-/* check if is consonant | 1-> is consonant */
+/* check if is consonant */
 
 int is_consonant(unsigned char c){
     if(c=='b' || c=='c' || c=='d' || c=='f' || c=='g' || c=='h'|| c=='j' || c=='k' || c=='l' || c=='m' || c=='n' || c=='p' || c=='q' || c=='r' || c=='s' || c=='t' || c=='v' || c=='w' || c=='x' || c=='y' || c=='z'){
@@ -32,7 +32,7 @@ int is_consonant(unsigned char c){
         return 0;
     }
 }
-/* check if is alpha or underscore | 1-> is alpha or underscore */
+/* check if is alpha or underscore  */
 int is_alpha_underscore(unsigned char c){
     if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
         return 1;
@@ -56,7 +56,7 @@ int is_space_separation_punctuation(unsigned char c){
     else if ((c=='-') || (c=='"') || (c=='[')||(c==']')||(c=='(')||(c==')')){ //separation
         return 1;
     }
-    else if(c=='.' || c == ',' || c==':' || c==';' || c == '?' || c =='!' || c == 0xE28093 || c == 0xE280A6 ){ //punctuation
+    else if(c=='.' || c==';' || c == '?' || c =='!' || c == ',' || c==':' || c == 0xE28093 || c == 0xE280A6 ){ //punctuation
         return 1;
     }
     else{
@@ -64,7 +64,7 @@ int is_space_separation_punctuation(unsigned char c){
     }
 }
 
-/* check if is apostrophe. 1-> it is */
+/* check if is apostrophe*/
 int is_apostrophe(unsigned char c){
     if(c==0x27){
         return 1;
@@ -74,7 +74,7 @@ int is_apostrophe(unsigned char c){
     }
 }
 
-/* get size of array */
+/* get size */
 int size_of_array(char *char_array){
     int i = 0;
     while (char_array[i] != NULL) {

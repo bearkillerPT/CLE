@@ -1,16 +1,3 @@
-/**
- *
- *  Definition of the operations carried out by the main thread:
- *     \li storeFileNames.
- *     \li printProcessingResults
- * 
- *  Definition of the operations carried out by the producers / consumers:
- *     \li processConvPoint
- *     \li getDataChunk
- *     \li savePartialResults
- * 
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -23,22 +10,25 @@
 #include "sharedRegion_functions.h"
 
 
-/** \brief file names storage region */
+/** \brief file names storage reg */
 static char ** fileNamesRegion;
 
-/** \brief total number of files to process */
-static int nFiles;
-
-/** \brief variable to control the first time of processing each file */
-bool firstProcessing = true;
-
-/** \brief file being currently processed */
+/** \brief file currently processed */
 int fileCurrentlyProcessed = 0;
 
-/* variables used to construct the chunks */
+/** \brief total nº of files to process */
+static int nFiles;
+
+/** \brief variab to control the 1º of processing each file */
+bool firstProcessing = true;
+
+
+
+/* construct the chunks */
+int MAX_SIZE = 60;
+int MAX_BYTES = 10;
 int readen_chars = 0;
-int MAX_SIZE_WRD = 50;
-int MAX_BYTES_READ = 12;
+
 
 /** \brief struct to store data of one file*/
 typedef struct {
@@ -50,11 +40,23 @@ typedef struct {
    int max_size;
    int max_chars;
    int **counting_array;
-   bool done;        /* to control the end of processing */ 
+   bool done;        
 } PARTFILEINFO;
 
 /** \brief to control the position of file reading */
 static long pos;
+
+/** \brief flag signaling the next chunk was obtained/processed */
+static bool processed;
+
+/** \brief flag which warrants that the data transfer region is initialized exactly once */
+static pthread_once_t init = PTHREAD_ONCE_INIT;
+
+/** \brief workers synchronization point when next chunk was obtained and processed */
+static pthread_cond_t process;
+
+/** \brief flag signaling the previously processed partial info was stored */
+static bool stored;
 
 /** \brief all partial file infos */
 static PARTFILEINFO * partfileinfos;
@@ -65,31 +67,21 @@ static pthread_mutex_t accessCR = PTHREAD_MUTEX_INITIALIZER;
 /** \brief workers synchronization point when previously processed partial info was stored in region */
 static pthread_cond_t store;
 
-/** \brief workers synchronization point when next chunk was obtained and processed */
-static pthread_cond_t process;
 
-/** \brief flag signaling the previously processed partial info was stored */
-static bool stored;
-
-/** \brief flag signaling the next chunk was obtained/processed */
-static bool processed;
-
-/** \brief flag which warrants that the data transfer region is initialized exactly once */
-static pthread_once_t init = PTHREAD_ONCE_INIT;
 
 
 /**
- *  \brief Initialization of the data transfer region.
+ *  \brief Initialization 
  *
- *  Internal monitor operation.
+ *  monitor operation.
  */
 
 static void initialization (void) {
     
     processed = false;                                                         /* next chunk was not processed/obtained */
-    stored = false;                                                           /* previous partial info was not stored */
-    pthread_cond_init (&process, NULL);                                 /* initialize workers synchronization point */
-    pthread_cond_init (&store, NULL);                                 /* initialize workers synchronization point */
+    stored = false;                                                           /* previous partial info not stored*/
+    pthread_cond_init (&process, NULL);                                 
+    pthread_cond_init (&store, NULL);                                
     setlocale(LC_CTYPE, "");    
 
 }
@@ -103,27 +95,27 @@ static void initialization (void) {
 void storeFileNames(int nFileNames, char *fileNames[]) {
   
     if ((pthread_mutex_lock (&accessCR)) != 0) {                             /* enter monitor */                       
-       perror ("error on entering monitor(CF)");                            /* save error in errno */
+       perror ("error on entering monitor(CF)");                            
        int status = EXIT_FAILURE;
        pthread_exit(&status);
     }
     
-    nFiles = nFileNames;                     /* number of files */
+    nFiles = nFileNames;                     /* nº of files */
 
-    fileNamesRegion = malloc(nFiles * sizeof(char*));   /* memory allocation for the region storing the filenames*/
+    fileNamesRegion = malloc(nFiles * sizeof(char*));   /* mem allocation for the region storing the filenames*/
 
-    partfileinfos = (PARTFILEINFO*)malloc(sizeof(PARTFILEINFO) * nFiles);   /* memory allocation for the partial infos per file*/
+    partfileinfos = (PARTFILEINFO*)malloc(sizeof(PARTFILEINFO) * nFiles);   /* mem allocation for the partial infos per file*/
 
     for (int i=0; i<nFileNames; i++) {
-        fileNamesRegion[i] = malloc((12) * sizeof(char));       /* memory allocation for the filenames*/
+        fileNamesRegion[i] = malloc((12) * sizeof(char));       /* mem allocation for the filenames*/
         strcpy(fileNamesRegion[i], fileNames[i]);
-        partfileinfos[i].done = false;                         /* initialization variable done of each partial info */
+        partfileinfos[i].done = false;                         
     }
 
     pthread_once (&init, initialization);    
 
     if ((pthread_mutex_unlock (&accessCR)) != 0) {                   /* exit monitor */                                                
-       perror ("error on exiting monitor(CF)");                     /* save error in errno */
+       perror ("error on exiting monitor(CF)");                     
        int status = EXIT_FAILURE;
        pthread_exit(&status);
     }
@@ -140,71 +132,67 @@ void storeFileNames(int nFileNames, char *fileNames[]) {
 int getDataChunk(int threadId, char *buf, PARTFILEINFO *partialInfo) {
 
     if ((pthread_mutex_lock (&accessCR)) != 0) {                     /* enter monitor */        
-        perror ("error on entering monitor(CF)");                   /* save error in errno */
+        perror ("error on entering monitor(CF)");                   
         int status = EXIT_FAILURE;
         pthread_exit(&status);
     }
 
-    if (firstProcessing == false) {                                  /* no need to wait in the first processing as there is no values to be stored */
+    if (firstProcessing == false) {                                  /* no need to wait, no values to process */
         while (stored==false) {                                       /* wait if the previous partial info was no stored */
             if ((pthread_cond_wait (&store, &accessCR)) != 0) {                                                       
-                perror ("error on waiting in fifoEmpty");                 /* save error in errno */
+                perror ("error on waiting in fifoEmpty");                 
                 int status = EXIT_FAILURE;
                 pthread_exit (&status);
             }
         }
     }
 
-    if (partfileinfos[fileCurrentlyProcessed].done == true) {     /* if no more data to process in current file */  
-        if (fileCurrentlyProcessed == nFiles - 1) {       /* if current file is the last file to be processed */
-            if ((pthread_mutex_unlock (&accessCR)) != 0) {              /* exit monitor */                                         
-                perror ("error on exiting monitor(CF)");                /* save error in errno */
+    if (partfileinfos[fileCurrentlyProcessed].done == true) {     /* no more data to process on file */  
+        if (fileCurrentlyProcessed == nFiles - 1) {                /* last file to process*/
+            if ((pthread_mutex_unlock (&accessCR)) != 0) {                                                       
+                perror ("error on exiting monitor(CF)");                
                 int status = EXIT_FAILURE;                              
                 pthread_exit(&status);
             }
-            return 1;                                                      /* end */
+            return 1;                                                     
         }
         
-        fileCurrentlyProcessed++;       /* next file to process */
+        fileCurrentlyProcessed++;       /* next file */
         firstProcessing = true;
     }  
 
-    if (firstProcessing == true) {               /* if first time processing the current file */
-        partfileinfos[fileCurrentlyProcessed].fileId = fileCurrentlyProcessed; /* initialize variables */
+    if (firstProcessing == true) {               /* first time process file */
+        partfileinfos[fileCurrentlyProcessed].fileId = fileCurrentlyProcessed; 
         partfileinfos[fileCurrentlyProcessed].n_words = 0;
         partfileinfos[fileCurrentlyProcessed].n_chars = 0;
         partfileinfos[fileCurrentlyProcessed].n_consonants = 0;
         partfileinfos[fileCurrentlyProcessed].in_word = 0;
-        partfileinfos[fileCurrentlyProcessed].max_size = 50;
+        partfileinfos[fileCurrentlyProcessed].max_size = 60;
         partfileinfos[fileCurrentlyProcessed].max_chars = 0;
-        partfileinfos[fileCurrentlyProcessed].counting_array = (int **)calloc(50, sizeof(int *));
-		for (int j = 0; j<50; j++){
+        partfileinfos[fileCurrentlyProcessed].counting_array = (int **)calloc(60, sizeof(int *));
+		for (int j = 0; j<60; j++){
 			partfileinfos[fileCurrentlyProcessed].counting_array[j] = (int *)calloc(j+2, sizeof(int));
 		}
     }
 
     FILE *f = fopen(fileNamesRegion[fileCurrentlyProcessed], "r");
 
-    if (firstProcessing==false) fseek(f, pos, SEEK_SET );  /* go to position where stopped read last time */
+    if (firstProcessing==false) fseek(f, pos, SEEK_SET );  /* position where stopped read last time */
     if (firstProcessing==true) firstProcessing = false;
 
     wchar_t c;
     c = fgetwc(f);    /* get next char */
     pos = ftell(f);   /* current position of file reading */
 
-    /*first, we do the conversion - if char is not
-    multibyte, it will remain unibyte*/
+   
     char converted_char = convert_multibyte(c);
   
-    /* if the number of chars read are still less than MAX_BYTES_READ, they can go directly to the buffer */
-    if(readen_chars<MAX_BYTES_READ){
+    /* nº of chars < MAX_BYTES ----> buffer*/
+    if(readen_chars<MAX_BYTES){
         buf[readen_chars] = converted_char;
         readen_chars++;
     }
-    /* otherwise, there are two cases that can happen:
-        1 - the char is not end of word -> we don't want to break words, so we add it to the array (using the extra space
-        MAX_SIZE_WRD, that is there for this cases where the word is still not completed) 
-        2- the char is end of word -> the buffer needs to be emptied and another word is starting
+    /* we use the array MAX_SIZE ( the char is not end of word) || the char is end of word - buffer emptied and another word start
     */
     else{
         if(is_end_of_word(converted_char) == 0){
@@ -212,7 +200,7 @@ int getDataChunk(int threadId, char *buf, PARTFILEINFO *partialInfo) {
             readen_chars++;
         }
         else{
-            memset(buf, 0, MAX_BYTES_READ+MAX_SIZE_WRD);
+            memset(buf, 0, MAX_BYTES+MAX_SIZE);
             readen_chars = 0;
             buf[readen_chars] = converted_char;
             readen_chars++;
@@ -221,22 +209,22 @@ int getDataChunk(int threadId, char *buf, PARTFILEINFO *partialInfo) {
 
     fclose(f);
     
-    if ( c == WEOF)  { /* if last character of current file */
+    if ( c == WEOF)  { /*last character of current file */
         partfileinfos[fileCurrentlyProcessed].done = true;   /* done processing current file */
     }
 
     *partialInfo = partfileinfos[fileCurrentlyProcessed];
 
     processed = true;     /* obtained chunk */
-    if ((pthread_cond_signal (&process)) != 0) {      /* let a worker know that the next chunk has been obtainedd */                                                                                                                         
-        perror ("error on waiting in fifoEmpty");                 /* save error in errno */
+    if ((pthread_cond_signal (&process)) != 0) {      /* worker know that the next chunk has been obtainedd */                                                                                                                         
+        perror ("error on waiting in fifoEmpty");                 
         int status = EXIT_FAILURE;
         pthread_exit (&status);
     }
-    stored = false; /* this chunk was not stored yet */
+    stored = false; 
 
-    if ((pthread_mutex_unlock (&accessCR)) != 0) {                                                  /* exit */    
-        perror ("error on exiting monitor(CF)");                                        /* save error in errno */
+    if ((pthread_mutex_unlock (&accessCR)) != 0) {                                                  
+        perror ("error on exiting monitor(CF)");                                        
         int status = EXIT_FAILURE;
         pthread_exit(&status);
     }
@@ -246,39 +234,39 @@ int getDataChunk(int threadId, char *buf, PARTFILEINFO *partialInfo) {
 
 
 /**
- *  \brief Save the partial results last processed.
+ *  \brief Save partial results.
  *
- *  Operation carried out by workers.
+ *  Done by Workers
  */
 
 void savePartialResults(int threadId, PARTFILEINFO *partialInfo) {
 
-    if ((pthread_mutex_lock (&accessCR)) != 0) {                     /* enter monitor */        
-        perror ("error on entering monitor(CF)");                   /* save error in errno */
+    if ((pthread_mutex_lock (&accessCR)) != 0) {                           
+        perror ("error on entering monitor(CF)");                   
         int status = EXIT_FAILURE;
         pthread_exit(&status);
     }
 
     while (processed == false) {                                               /* wait if the next chunk was not obtained/processed */
         if ((pthread_cond_wait (&process, &accessCR)) != 0) {
-            perror ("error on waiting in fifoEmpty");                  /* save error in errno */
+            perror ("error on waiting in fifoEmpty");                  
             int status = EXIT_FAILURE;
             pthread_exit (&status);
         }
     }
 
-    partfileinfos[fileCurrentlyProcessed] = *partialInfo;                   /* save new partial info */
+    partfileinfos[fileCurrentlyProcessed] = *partialInfo;                   /* save partial info */
     
     stored = true;                                /* new partial info saved */
     if ((pthread_cond_signal (&store)) != 0) {
-        perror ("error on waiting in fifoEmpty");                  /* save error in errno */
+        perror ("error on waiting in fifoEmpty");                  
         int status = EXIT_FAILURE;
         pthread_exit (&status);
     }
     processed = false;                   /* next chunk was not processed yet */
      
-    if ((pthread_mutex_unlock (&accessCR)) != 0) {                                                  /* exit */    
-        perror ("error on exiting monitor(CF)");                                        /* save error in errno */
+    if ((pthread_mutex_unlock (&accessCR)) != 0) {                                                   
+        perror ("error on exiting monitor(CF)");                                        
         int status = EXIT_FAILURE;
         pthread_exit(&status);
     }
@@ -287,20 +275,20 @@ void savePartialResults(int threadId, PARTFILEINFO *partialInfo) {
 
 
 /**
- *  \brief Print all final results.
+ *  \brief Print final results.
  *
- *  Operation carried out by main thread.
+ *  Done by Main
  */
 
 void printProcessingResults() {
 
-    if ((pthread_mutex_lock (&accessCR)) != 0) {                     /* enter monitor */        
-        perror ("error on entering monitor(CF)");                   /* save error in errno */
+    if ((pthread_mutex_lock (&accessCR)) != 0) {                        
+        perror ("error on entering monitor(CF)");                   
         int status = EXIT_FAILURE;
         pthread_exit(&status);
     }
 
-    for (int i=0; i<nFiles; i++) {                  /* each partial file info */
+    for (int i=0; i<nFiles; i++) {                 
 
         printf("\nFile name: %s\n", fileNamesRegion[i]);
 
@@ -311,8 +299,8 @@ void printProcessingResults() {
         
     }
 
-    if ((pthread_mutex_unlock (&accessCR)) != 0) {                                                  /* exit */    
-        perror ("error on exiting monitor(CF)");                                        /* save error in errno */
+    if ((pthread_mutex_unlock (&accessCR)) != 0) {                                                  
+        perror ("error on exiting monitor(CF)");                                        
         int status = EXIT_FAILURE;
         pthread_exit(&status);
     }

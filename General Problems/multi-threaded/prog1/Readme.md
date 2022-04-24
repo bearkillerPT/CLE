@@ -3,7 +3,10 @@
 ## Compiling
 
 ```c
-gcc -Wall -o main main.c sharedRegion.c -lpthread -lm
+mkdir build;
+cd build;
+cmake ..;
+make;
 ```
 
 ## Usage examples
