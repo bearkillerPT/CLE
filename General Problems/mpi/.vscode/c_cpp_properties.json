@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Arch",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/opt/mpich/include"
+            ],
+            "defines": [],
+            "macFrameworkPath": [],
+            "compilerPath": "/opt/mpich/bin/mpicc",
+            "cStandard": "c99",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}
