@@ -72,11 +72,10 @@ void loadFilesInfo(int numberFiles, char *inputFilenames[])
         /* initialize variables of the structure*/
         partfileinfos[i].fileId = i;    
         partfileinfos[i].n_words = 0;
-        partfileinfos[i].n_chars = 0;
-        //partfileinfos[i].n_vowels = 0;
+        partfileinfos[i].n_vowels = 0;
         partfileinfos[i].n_consonants = 0;
         partfileinfos[i].in_word = 0;
-        partfileinfos[i].max_chars = 0;
+        
         partfileinfos[i].done = false;
         partfileinfos[i].firstProcessing = true;
         for (int j = 0; j<50; j++)
@@ -186,17 +185,9 @@ void savePartialResults(PartFileInfo partfileinfo)
 {
 
     partfileinfos[fileCurrentlyProcessed].n_words += partfileinfo.n_words;
-    partfileinfos[fileCurrentlyProcessed].n_chars += partfileinfo.n_chars;
-    //partfileinfos[fileCurrentlyProcessed].n_vowels += partfileinfo.n_vowels;
+    partfileinfos[fileCurrentlyProcessed].n_vowels += partfileinfo.n_vowels;
     partfileinfos[fileCurrentlyProcessed].n_consonants += partfileinfo.n_consonants;
-    if(partfileinfo.max_chars > partfileinfos[fileCurrentlyProcessed].max_chars) partfileinfos[fileCurrentlyProcessed].max_chars = partfileinfo.max_chars;
-    for (int j = 0; j<50; j++)
-    {
-        for(int k=0; k<51; k++) 
-        {
-            partfileinfos[fileCurrentlyProcessed].counting_array[j][k] += partfileinfo.counting_array[j][k];
-        }
-    }
+   
 
 }
 

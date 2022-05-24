@@ -1,5 +1,5 @@
 /**
- * 
+ * Sometimes you need to use: PATH=/home/<username>/mpich-install/bin:$PATH ; export PATH
  * mpicc -Wall -o main main.c dispatcher.c worker.c
  * mpiexec -n <number_processes> ./main <text_file>
  * Example: mpiexec -n 2 ./main text0.txt
@@ -127,11 +127,9 @@ void worker(int rank)
         /* initialize variables of the structure*/
         partfileinfo.fileId = 0; 
         partfileinfo.n_words = 0;
-        partfileinfo.n_chars = 0;
         partfileinfo.n_vowels = 0;
         partfileinfo.n_consonants = 0;
         partfileinfo.in_word = 0;
-        partfileinfo.max_chars = 0;
         partfileinfo.done = false;
         partfileinfo.firstProcessing = false;
         for (int j = 0; j<50; j++)
