@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     if (rank == 0)
     {
         double *results = calloc(100, sizeof(double));
-
+        int matrix_count;
         for (int matrix_file_i = 1; matrix_file_i < argc; matrix_file_i++)
         {
             FILE *matrix_file = fopen(argv[matrix_file_i], "r");
@@ -37,10 +37,10 @@ int main(int argc, char *argv[])
                 printf("File %s couldn't be opened!\n", argv[matrix_file_i]);
                 continue;
             }
-            int matrix_count, matrix_order;
+            int matrix_order;
             fread(&matrix_count, sizeof(int), 1, matrix_file);
             fread(&matrix_order, sizeof(int), 1, matrix_file);
-            printf("%d %dx%d matrixes\n", matrix_count, matrix_order, matrix_order);
+            //printf("%d %dx%d matrixes\n", matrix_count, matrix_order, matrix_order);
             double *data = malloc(matrix_order * matrix_order * sizeof(double));
             for (int matrix_i = 0; matrix_i < matrix_count; matrix_i++)
             {
@@ -64,8 +64,8 @@ int main(int argc, char *argv[])
                             results = realloc(results, results_size * sizeof(double));
                         }
                         MPI_Recv(&results[current_result], 1, MPI_DOUBLE, worker_i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                        printf("Result %d is %E\n", current_result, results[current_result]);
-                        fflush(stdout);
+                        //printf("Result %d is %E\n", current_result, results[current_result]);
+                        //fflush(stdout);
                         current_result += 1;
                     }
                 }
@@ -77,14 +77,16 @@ int main(int argc, char *argv[])
         }
         if (current_worker > 1)
         {
-            for (int worker_i = 1; worker_i <= current_worker; worker_i++)
+            for (int worker_i = 1; worker_i < current_worker; worker_i++)
             {
                 if (current_result == results_size)
                 {
-                    results_size += 100;
+                    results_size += current_worker;
                     results = realloc(results, results_size * sizeof(double));
                 }
                 MPI_Recv(&results[current_result], 1, MPI_DOUBLE, worker_i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                //printf("Result %d is %E\n", current_result, results[current_result]);
+                //fflush(stdout);
                 current_result += 1;
             }
         }
@@ -92,7 +94,7 @@ int main(int argc, char *argv[])
         for (int worker_id = 1; worker_id < size; worker_id++)
             MPI_Send(&whatToDo, 1, MPI_UNSIGNED, worker_id, 0, MPI_COMM_WORLD);
         free(results);
-        printf("Root process Finished!\n");
+        //printf("Root process Finished!\n");
     }
     else
     {
