@@ -1,7 +1,7 @@
 /**
  *  \file dispatcher.c
  *
- *  \brief Problem: Assignment 2 - MPI (circular cross-correlation)
+ *  \brief Problem: Assignment 2 - MPI 
  *
  *  Implements all the methods that will be called by the dispatcher.
  *
@@ -95,7 +95,7 @@ void loadFilesInfo(int numberFiles, char *inputFilenames[])
  *
  *  Obtain next data chunk (buffer) of the current file being processed.
  * 
- *  @param buf responsible for carrying the data chunks. Buf (buffer) has size of MAX_BYTES_TO_READ bytes + MAX_SIZE_WORD -> this way,
+ *  @param buf responsible for carrying the data chunks. Buf  has size of MAX_BYTES_TO_READ bytes + MAX_SIZE_WORD -> this way,
  *  we prevent the case where the last word that was readen is not complete. It will be a set of complete words
  * 
  *  @return 1 if there is no more data to process, 0 otherwise.

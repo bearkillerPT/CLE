@@ -1,7 +1,7 @@
 /**
  *  \file main_functions.h (functions file)
  *
- *  \brief Problem: Assignment 2 - MPI (circular cross-correlation)
+ *  \brief Problem: Assignment 2 - MPI 
  *
  *  Functions used to convert multibyte chars to unibyte and verify if a char is an end of word.
  *
@@ -20,7 +20,7 @@
  *  \brief Function convert_multibyte.
  *
  *   make conversion multibyte to singlebyte: 
- *   if it's already singlebyte, it breaks
+ *   if already singlebyte, it breaks and stops
  * 
  *  @param c char to be converted
  *  @return c in singlebyte

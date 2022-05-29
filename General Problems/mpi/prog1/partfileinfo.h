@@ -1,7 +1,7 @@
 /**
  *  \file partfileinfo.h
  *
- *  \brief Problem: Assignment 2 - MPI (circular cross-correlation)
+ *  \brief Problem: Assignment 2 - MPI 
  *
  *  Struct used to store partial infos.
  *

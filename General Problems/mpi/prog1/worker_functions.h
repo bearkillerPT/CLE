@@ -1,7 +1,7 @@
 /**
  *  \file worker_functions.h (functions file)
  *
- *  \brief Problem: Assignment 2 - MPI (circular cross-correlation)
+ *  \brief Problem: Assignment 2 - MPI 
  *
  *  Functions used to make the counting of the characters and other calculations in each worker
  *

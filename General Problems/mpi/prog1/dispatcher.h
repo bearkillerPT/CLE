@@ -1,7 +1,7 @@
  /**
  *  \file dispatcher.h
  *
- *  \brief Problem: Assignment 2 - MPI (circular cross-correlation)
+ *  \brief Problem: Assignment 2 - MPI 
  *
  *  Dispatcher header file.
  *

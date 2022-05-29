@@ -6,7 +6,7 @@
  * 
  *  \file main.c
  *
- *  \brief Problem: Assignment 2 - MPI (circular cross-correlation)
+ *  \brief Problem: Assignment 2 - MPI 
  *
  *  Multiprocess message passing - Main program
  *
@@ -47,7 +47,7 @@ void dispatcher(char *filenames[], int nFiles)
 {
     int workerId;
     
-    bool workToBeDone = true;       /* to control the end of work */
+    bool workToBeDone = true;       
           
     /* buffer has size of MAX_BYTES_TO_READ bytes + MAX_SIZE_WORD -> this way,
     we prevent the case where the last word that was readen is not complete. It will be a set of complete words. */
