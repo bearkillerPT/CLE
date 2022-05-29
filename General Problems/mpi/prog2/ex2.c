@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
             int matrix_order;
             fread(&matrix_count, sizeof(int), 1, matrix_file);
             fread(&matrix_order, sizeof(int), 1, matrix_file);
-            //printf("%d %dx%d matrixes\n", matrix_count, matrix_order, matrix_order);
+            printf("%d %dx%d matrixes\n", matrix_count, matrix_order, matrix_order);
             double *data = malloc(matrix_order * matrix_order * sizeof(double));
             for (int matrix_i = 0; matrix_i < matrix_count; matrix_i++)
             {
@@ -64,8 +64,8 @@ int main(int argc, char *argv[])
                             results = realloc(results, results_size * sizeof(double));
                         }
                         MPI_Recv(&results[current_result], 1, MPI_DOUBLE, worker_i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                        //printf("Result %d is %E\n", current_result, results[current_result]);
-                        //fflush(stdout);
+                        printf("Result %d is %E\n", current_result, results[current_result]);
+                        fflush(stdout);
                         current_result += 1;
                     }
                 }
@@ -85,8 +85,8 @@ int main(int argc, char *argv[])
                     results = realloc(results, results_size * sizeof(double));
                 }
                 MPI_Recv(&results[current_result], 1, MPI_DOUBLE, worker_i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                //printf("Result %d is %E\n", current_result, results[current_result]);
-                //fflush(stdout);
+                printf("Result %d is %E\n", current_result, results[current_result]);
+                fflush(stdout);
                 current_result += 1;
             }
         }
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
         for (int worker_id = 1; worker_id < size; worker_id++)
             MPI_Send(&whatToDo, 1, MPI_UNSIGNED, worker_id, 0, MPI_COMM_WORLD);
         free(results);
-        //printf("Root process Finished!\n");
+        printf("Root process Finished!\n");
     }
     else
     {
