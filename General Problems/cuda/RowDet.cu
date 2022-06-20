@@ -46,16 +46,16 @@ int main(int argc, char const *argv[])
             fclose(matrix_file);
 			double *gpu_matrixes;
 			CHECK(cudaMalloc((void**) &gpu_matrixes, all_matrixes_size));
-			CHECK(cudaMemcpy(&gpu_matrixes[0], &all_matrixes[0], all_matrixes_size, cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(gpu_matrixes, all_matrixes, all_matrixes_size, cudaMemcpyHostToDevice));
 			
             
             dim3 grid(matrix_count, 1, 1);
 			dim3 block(matrix_order, 1, 1);
             gaussianEliminationRows<<<grid, block>>>(gpu_matrixes, matrix_order);
 
-            //CHECK(cudaDeviceSynchronize());
+            CHECK(cudaDeviceSynchronize());
             CHECK(cudaGetLastError());
-			CHECK(cudaMemcpy(&all_matrixes[0], &gpu_matrixes[0], all_matrixes_size, cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(all_matrixes, gpu_matrixes, all_matrixes_size, cudaMemcpyDeviceToHost));
             for(int i = 0; i < matrix_count; i++) {
                 double determinant = 1.0;
                 int current_matrix_offset = i * matrix_order * matrix_order;
@@ -67,7 +67,6 @@ int main(int argc, char const *argv[])
 			free(all_matrixes);
 			CHECK(cudaFree(gpu_matrixes));
             CHECK(cudaDeviceReset());
-            fclose(matrix_file);
         }
         else
             printf("The provided file: %s\n couldn't be opened!\n", argv[matrix_file_i]);
