@@ -1,6 +1,6 @@
 
 
-all: RowDet
+all: ColsGaussianDet RowsGaussianDet
 
 %: %.cu
 	nvcc -O2 -Wno-deprecated-gpu-targets -o $@ $<
