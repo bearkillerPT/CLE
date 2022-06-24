@@ -13,11 +13,15 @@ __device__ static void swap_matrix_columns(double *matrix, int matrix_order, int
 int main(int argc, char const *argv[])
 {
     // usage
-    if (argc == 1)
+    if (argc < 4)
     {
-        printf("Program Usage:\n\t ./ex2 (matrix*.txt)+\n");
+        printf("Program Usage:\n\t ./RowsGaussianDet x blocks_y_dim threads_y_dim (matrix*.txt)+\n");
         return 1;
     }
+
+
+    int blocks_y_dim = atoi(argv[1]);
+    int threads_y_dim = atoi(argv[2]);
 
     // set up device
     int dev = 0;
@@ -54,9 +58,9 @@ int main(int argc, char const *argv[])
             // allocate memory for the matrices on the gpu and memcopy
             CHECK(cudaMalloc((void **)&gpu_matrices, all_matrices_size));
             CHECK(cudaMemcpy(gpu_matrices, all_matrices, all_matrices_size, cudaMemcpyHostToDevice));
-
-            dim3 grid(matrix_count, 1, 1);
-            dim3 block(matrix_order, 1, 1);
+            
+            dim3 grid(matrix_count/blocks_y_dim, blocks_y_dim, 1);
+            dim3 block(matrix_order/threads_y_dim, threads_y_dim, 1);
             gaussianEliminationCols<<<grid, block>>>(gpu_matrices, matrix_order, matrix_count);
 
             // error check

@@ -13,14 +13,19 @@ __device__ static void swap_matrix_rows(double *matrix, int first_row, int secon
 int main(int argc, char const *argv[])
 {
     // usage
-    if (argc == 1)
+    if (argc < 4)
     {
-        printf("Program Usage:\n\t ./ex2 (matrix*.txt)+\n");
+        printf("Program Usage:\n\t ./RowsGaussianDet x blocks_y_dim threads_y_dim (matrix*.txt)+\n");
         return 1;
     }
 
+    int blocks_y_dim = atoi(argv[1]);
+    int threads_y_dim = atoi(argv[2]);
+    
     // set up device
     int dev = 0;
+    printf("blocks_y_dim: %d\n", blocks_y_dim);
+    printf("threads_y_dim: %d\n", threads_y_dim);
     cudaDeviceProp deviceProp;
     CHECK(cudaGetDeviceProperties(&deviceProp, dev));
     printf("Using Device %d: %s\n", dev, deviceProp.name);
@@ -28,7 +33,7 @@ int main(int argc, char const *argv[])
 
     // time vars
     double exec_start = seconds();
-    for (int matrix_file_i = 1; matrix_file_i < argc; matrix_file_i++)
+    for (int matrix_file_i = 3; matrix_file_i < argc; matrix_file_i++)
     {
         // for every file
         FILE *matrix_file = fopen(argv[matrix_file_i], "r");
@@ -55,8 +60,8 @@ int main(int argc, char const *argv[])
             CHECK(cudaMalloc((void **)&gpu_matrices, all_matrices_size));
             CHECK(cudaMemcpy(gpu_matrices, all_matrices, all_matrices_size, cudaMemcpyHostToDevice));
 
-            dim3 grid(matrix_count, 1, 1);
-            dim3 block(matrix_order, 1, 1);
+            dim3 grid(matrix_count/blocks_y_dim, blocks_y_dim, 1);
+            dim3 block(matrix_order/threads_y_dim, threads_y_dim, 1);
             gaussianEliminationRows<<<grid, block>>>(gpu_matrices, matrix_order, matrix_count);
 
             // error check
