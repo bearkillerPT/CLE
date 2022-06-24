@@ -109,7 +109,7 @@ __global__ static void gaussianEliminationRows(double *all_matrices, int matrix_
 
             __syncthreads();
 
-            // if there is no non zero row just set the value to 0 so that the determinant will also be 0 and return
+            // if there is no non zero row the determinant will also be 0 and return
             if (row == -1)
                 return;
 

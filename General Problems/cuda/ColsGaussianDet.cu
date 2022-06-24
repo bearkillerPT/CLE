@@ -109,13 +109,13 @@ __global__ static void gaussianEliminationCols(double *all_matrices, int matrix_
 
             __syncthreads();
 
-            // if there is no non zero col just set the value to 0 so that the determinant will also be 0 and return
+            // if there is no non zero col the determinant will also be 0 and return
             if (col == -1)
                 return;
 
             // swap cols
             if (col != current_column_pivot)
-                swap_matrix_columns(current_matrix, matrix_order, current_row_pivot, col, thread_ID);
+                swap_matrix_columns(current_matrix, matrix_order, current_column_pivot, col, thread_ID);
 
             __syncthreads();
         }
@@ -136,7 +136,7 @@ __global__ static void gaussianEliminationCols(double *all_matrices, int matrix_
 
             __syncthreads();
 
-            // apply the transformation for the remaining elements in the same row on the next columns
+            // apply the transformation for the remaining elements in the same column on the next rows
 
             if (thread_ID < matrix_order && thread_ID >= current_row_pivot)
             {
